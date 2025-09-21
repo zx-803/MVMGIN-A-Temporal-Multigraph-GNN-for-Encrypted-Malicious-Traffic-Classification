@@ -58,8 +58,8 @@ class CustomEdgeConv(MessagePassing):
 
         msg = torch.cat([x_i, x_j, edge_attr], dim=-1)
 
-        transformed = self.mlp(msg)  # [E, out]
-        return transformed * edge_weights.unsqueeze(-1)  # [E, out]
+        transformed = self.mlp(msg)
+        return transformed * edge_weights.unsqueeze(-1) 
 
     def _current_head(self):
 
@@ -103,18 +103,17 @@ class MultiGraphLayer(torch.nn.Module):
 
     def forward(self, x, edge_index, edge_attr):
 
-        edge_attr = self.edge_embed(edge_attr)  # 原始流量表征
+        edge_attr = self.edge_embed(edge_attr)  
 
         h = x
 
 
 
         src_h = h[edge_index[0]]
-        edge_weights = self.edge_weight_gen(torch.concat([edge_attr, src_h], dim=-1))  # [num_edges, n_view]\
+        edge_weights = self.edge_weight_gen(torch.concat([edge_attr, src_h], dim=-1))  
 
 
-        h = h.unsqueeze(1).expand(-1, self.n_heads, -1)  # [N, D] → [N, H, D]
-
+        h = h.unsqueeze(1).expand(-1, self.n_heads, -1)  
 
 
         edge_index = edge_index[[1, 0], :]
@@ -163,7 +162,8 @@ class GlobalLocalEncoder(torch.nn.Module):
             query=query,
             key=key_local,
             value=key_local
-        )  # 输出 [1, N, D]
+        )  
+        
         local_out = local_out.squeeze(0)
 
         pooled_global = global_feats.mean(dim=0)
@@ -176,7 +176,8 @@ class GlobalLocalEncoder(torch.nn.Module):
         )
         global_out = global_out.squeeze(0)
 
-        # 残差连接
+  
+    
         return torch.cat([edge_attr, local_out, global_out], dim=-1), pooled_global, global_attn_weights
 
 
@@ -270,14 +271,14 @@ class MVMGIN(torch.nn.Module):
         non_redundancy_loss = 0
         for i in range(self.n_heads):
             for j in range(i + 1, self.n_heads):
-                # h_i 和 h_j 的形状都是 [N, hidden_dim]
+           
                 h_i = h[:, i, :]
                 h_j = h[:, j, :]
 
-                cos_sim = F.cosine_similarity(h_i, h_j, dim=-1)  # 形状 [N]
+                cos_sim = F.cosine_similarity(h_i, h_j, dim=-1) 
 
 
-                non_redundancy_loss += torch.mean(cos_sim ** 2)  # 对N个节点的相似度平方求平均
+                non_redundancy_loss += torch.mean(cos_sim ** 2)  
 
 
         num_pairs = self.n_heads * (self.n_heads - 1) / 2
@@ -287,4 +288,5 @@ class MVMGIN(torch.nn.Module):
         loss = loss1 + 0.001 * non_redundancy_loss
 
         return loss
+
 
